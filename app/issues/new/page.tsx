@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createIssueSchema } from "@/app/ValidationSchema";
 import { z } from "zod";
 import ErrorMessage from "@/app/components/ErrorMessage";
+import Loader from "@/app/components/Loader";
 
 type IssueForm = z.infer<typeof createIssueSchema>;
 
@@ -25,16 +26,19 @@ const page = () => {
   });
   const router = useRouter();
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submitForm = async (data: IssueForm) => {
+  const submitForm = handleSubmit(async (data) => {
     try {
+      setIsSubmitting(true);
       await axios.post("/api/issue", data);
       router.push("/issues");
     } catch (error) {
+      setIsSubmitting(false);
       // console.log(error);
       setError("An Unexpected Error Occured.");
     }
-  };
+  });
 
   return (
     <div className="max-w-xl">
@@ -43,10 +47,7 @@ const page = () => {
           <Callout.Text>{error}</Callout.Text>
         </Callout.Root>
       )}
-      <form
-        className=" space-y-3"
-        onSubmit={handleSubmit((data) => submitForm(data))}
-      >
+      <form className=" space-y-3" onSubmit={submitForm}>
         <TextField.Root placeholder="Title" {...register("title")} />
         <ErrorMessage>{errors.title?.message}</ErrorMessage>
 
@@ -60,7 +61,9 @@ const page = () => {
         {errors.description && (
           <ErrorMessage>{errors.description?.message}</ErrorMessage>
         )}
-        <Button>Submit New Issue</Button>
+        <Button disabled={isSubmitting}>
+          {isSubmitting ? <Loader /> : "Submit New Issue"}
+        </Button>
       </form>
     </div>
   );
