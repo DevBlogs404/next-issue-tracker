@@ -11,12 +11,8 @@ import { issueSchema } from "@/app/ValidationSchema";
 import { z } from "zod";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import Loader from "@/app/components/Loader";
-import dynamic from "next/dynamic";
 import { Issue } from "@prisma/client";
-
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
+import SimpleMDE from "react-simplemde-editor";
 
 type IssueFormData = z.infer<typeof issueSchema>;
 
@@ -36,8 +32,10 @@ const IssueForm = ({ issue }: { issue?: Issue }) => {
   const submitForm = handleSubmit(async (data) => {
     try {
       setIsSubmitting(true);
-      await axios.post("/api/issue", data);
+      if (issue) await axios.patch(`/api/issue/` + issue.id, data);
+      else await axios.post("/api/issue", data);
       router.push("/issues");
+      router.refresh();
     } catch (error) {
       setIsSubmitting(false);
       // console.log(error);
@@ -72,7 +70,8 @@ const IssueForm = ({ issue }: { issue?: Issue }) => {
           <ErrorMessage>{errors.description?.message}</ErrorMessage>
         )}
         <Button disabled={isSubmitting}>
-          {isSubmitting ? <Loader /> : "Submit New Issue"}
+          {issue ? "Update Issue" : "Submit New Issue"}
+          {isSubmitting && <Loader />}
         </Button>
       </form>
     </div>
